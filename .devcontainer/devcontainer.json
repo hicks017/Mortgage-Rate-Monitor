@@ -1,0 +1,8 @@
+{
+	// Build the development Dockerfile
+	"name": "Python Dev",
+	"build": {
+		"dockerfile": "Dockerfile.dev",
+		"context": ".."
+	}
+}
