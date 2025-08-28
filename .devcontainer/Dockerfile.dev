@@ -1,0 +1,16 @@
+# Development Dockerfile
+FROM python:3.13.7-slim-trixie
+
+# Set working directory
+WORKDIR /app
+COPY . /app
+
+# Copy the necessary files
+COPY src/ ./src/
+
+# Install development dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y git \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install -r requirements.txt
