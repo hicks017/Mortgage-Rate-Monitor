@@ -3,7 +3,22 @@ import datetime
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
-import csv
+import sqlite3
+import psycopg
+
+# Configuration ------------------------------------------------------------------------
+mortgage_url = "https://www.mortgagenewsdaily.com/mortgage-rates/mnd"
+ticker = "MBB"
+SQLITE_FILE = "data.sqlite3"
+TABLE_NAME  = "rates_mbb"
+POSTGRES_VARS = {
+    "host":     os.getenv("PG_HOST"),
+    "port":     os.getenv("PG_PORT"),
+    "user":     os.getenv("PG_USER"),
+    "password": os.getenv("PG_PASSWORD"),
+    "dbname":   os.getenv("PG_DB")
+}
+USE_POSTGRES = all(POSTGRES_VARS.values())
 
 # Data extraction functions ------------------------------------------------------------
 def extract_30yr_rate(url):
@@ -43,26 +58,57 @@ def get_stock_price(ticker):
         return stock.info.get("currentPrice")
 
 # Data logging -------------------------------------------------------------------------
-def update_csv(filename, data):
+def get_connection():
     """
-    Append a dictionary 'data' as a new row into a CSV file.
-    Creates the CSV including headers if not already present.
+    Makes connection to either SQLite (default) or Postgres (user-defined).
     """
-    file_exists = os.path.isfile(filename)
-    with open(filename, mode='a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=data.keys())
-        # Write header only if the file is new
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(data)
+    if USE_POSTGRES:
+        return psycopg.connect(**POSTGRES_VARS)
+    return sqlite3.connect(SQLITE_FILE)
+
+def init_db(conn):
+    """
+    Ensures the target table exists.
+    """
+    cursor = conn.cursor()
+
+    if USE_POSTGRES:
+        ddl = f"""
+        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+            id              SERIAL PRIMARY KEY,
+            timestamp       TEXT    NOT NULL,
+            mortgage_rate   REAL,
+            mbb_price       REAL
+        );
+        """
+    else:
+        ddl = f"""
+        CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp       TEXT    NOT NULL,
+            mortgage_rate   REAL,
+            mbb_price       REAL
+        );
+        """
+    cursor.execute(ddl)
+    conn.commit()
+
+def update_table(conn, timestamp, mortgage_rate, mbb_price):
+    """
+    Appends a new record into the SQLite table.
+    """
+    cursor = conn.cursor()
+    placeholder = "%s" if USE_POSTGRES else "?"
+    sql_insert = (
+        f"INSERT INTO {TABLE_NAME} "
+        f"(timestamp, mortgage_rate, mbb_price) VALUES"
+        f"({placeholder}, {placeholder}, {placeholder})"
+    )
+    cursor.execute(sql_insert, (timestamp, mortgage_rate, mbb_price))
+    conn.commit()
 
 # Execution ----------------------------------------------------------------------------
 if __name__ == '__main__':
-    # Configuration
-    mortgage_url = "https://www.mortgagenewsdaily.com/mortgage-rates/mnd"
-    ticker = "MBB"
-    csv_filename = "data.csv"
-    
     # Get current data
     mortgage_rate = extract_30yr_rate(mortgage_url)
     stock_price = get_stock_price(ticker)
@@ -77,13 +123,13 @@ if __name__ == '__main__':
     else:
         print(f"Failed to retrieve the current price for {ticker}.")
     
-    # Record the current timestamp and update CSV log
-    current_time = datetime.datetime.now()
-    timestamp_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    new_row = {
-        "timestamp": timestamp_str,
-        "mortgage_rate": mortgage_rate,
-        "mbb_price": stock_price
-    }
-    update_csv(csv_filename, new_row)
-    print(f"Data appended to '{csv_filename}'.")
+    # Record the current timestamp and update the table
+    timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_connection()
+    init_db(conn)
+    update_table(conn, timestamp_str, mortgage_rate, stock_price)
+    conn.close()
+
+    # Feedback
+    db_type = "PostgreSQL" if USE_POSTGRES else "SQLite"
+    print(f"Data appended to {db_type} table '{TABLE_NAME}'.")
