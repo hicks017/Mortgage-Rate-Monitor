@@ -22,14 +22,18 @@ def create_scheduler():
     """
     Create and configure the scheduler with the required jobs.
     """
-    # Use US West timezone
+    # Set timezone and schedule
     tz = pytz.timezone("America/Los_Angeles")
+    hour, minute = 20,5
     sched = BlockingScheduler(timezone=tz)
 
-    # Run daily at 12:00 AM:
-    daily_trigger = CronTrigger(hour=0, minute=0, timezone=tz)
+    # Run daily at 6:30 AM:
+    daily_trigger = CronTrigger(hour=hour, minute=minute, timezone=tz)
     add_unique_job(sched, "daily_fetch_and_store", fetch_and_store_data, daily_trigger, max_instances=1)
-    logger.info("Scheduled daily data fetch and store at 00:00 America/Los_Angeles")
+    logger.info(
+        f"Scheduled daily data fetch and store at "
+        f"{hour:02d}:{minute:02d} {tz.zone}"
+    )
 
     return sched
 
