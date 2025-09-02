@@ -14,7 +14,7 @@ def add_unique_job(scheduler, job_id, func, trigger, max_instances=1):
     """
     existing_job = scheduler.get_job(job_id)
     if existing_job:
-        logger.info(f"Removing existing job: {job_id}")
+        logger.info(f"Removing existing job -- {job_id}")
         scheduler.remove_job(job_id)
     scheduler.add_job(func, trigger, id=job_id, max_instances=max_instances)
 
@@ -24,10 +24,10 @@ def create_scheduler():
     """
     # Set timezone and schedule
     tz = pytz.timezone("America/Los_Angeles")
-    hour, minute = 20,5
+    hour, minute = 8,40
     sched = BlockingScheduler(timezone=tz)
 
-    # Run daily at 6:30 AM:
+    # Run daily at the scheduled time:
     daily_trigger = CronTrigger(hour=hour, minute=minute, timezone=tz)
     add_unique_job(sched, "daily_fetch_and_store", fetch_and_store_data, daily_trigger, max_instances=1)
     logger.info(

@@ -33,7 +33,7 @@ def fetch_and_store_data():
     # Scrape for mortgage rate
     try:
         mortgage_rate = extract_30yr_rate(mortgage_url)
-        logger.info(f"Fetched 30-year fixed mortgage rate: {mortgage_rate}%")
+        logger.info(f"Fetched 30-year fixed mortgage rate -- {mortgage_rate}%")
     except Exception as e:
         mortgage_rate = None
         logger.error("Failed to find the 30-year fixed mortgage rate.")
@@ -41,7 +41,7 @@ def fetch_and_store_data():
     # Fetch stock price
     try:
         stock_price = get_stock_price(ticker)
-        logger.info(f"Fetched {ticker} stock price: ${stock_price:.2f}")
+        logger.info(f"Fetched {ticker} stock price -- ${stock_price:.2f}")
     except Exception as e:
         stock_price = None
         logger.error(f"Failed to fetch the stock price for {ticker}.")
