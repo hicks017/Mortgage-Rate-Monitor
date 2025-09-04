@@ -1,4 +1,4 @@
-name: CI Tests
+name: CI - Tests
 
 on:
   push:
@@ -26,7 +26,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -e .
 
       - name: Run unittest suite
         run: python -m unittest discover -s tests -v
