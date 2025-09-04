@@ -1,0 +1,5 @@
+.gitignore
+.git/
+**/__pycache__/
+db.sqlite3
+**/*.md
