@@ -24,7 +24,7 @@ def create_scheduler():
     """
     # Set timezone and schedule
     tz = pytz.timezone("America/Los_Angeles")
-    hour, minute = 8,40
+    hour, minute = 6,40
     sched = BlockingScheduler(timezone=tz)
 
     # Run daily at the scheduled time:

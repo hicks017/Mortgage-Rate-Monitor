@@ -6,6 +6,15 @@ import yfinance as yf
 from src.fetch import get_stock_price
 from tests.conftest import DummyTicker
 
+class DummyTicker:
+    def __init__(self, symbol, history_df, info_dict):
+        self.symbol = symbol
+        self._history_df = history_df
+        self.info = info_dict
+
+    def history(self, period):
+        return self._history_df
+
 class TestGetStockPrice(unittest.TestCase):
 
     @patch.object(yf, 'Ticker')
