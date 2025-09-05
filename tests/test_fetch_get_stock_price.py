@@ -4,7 +4,6 @@ import pandas as pd
 import yfinance as yf
 
 from src.fetch import get_stock_price
-from tests.conftest import DummyTicker
 
 class DummyTicker:
     def __init__(self, symbol, history_df, info_dict):
