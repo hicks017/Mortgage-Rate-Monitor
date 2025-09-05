@@ -1,0 +1,64 @@
+name: CI - Docker Build
+
+on:
+  push:
+    branches: [ main, 'feature/**' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  IMAGE_NAME: christianhicks/mortgage-rate-monitor 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker image
+      # Just build the image, do not push docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Push Docker image (main only)
+      # Push docker image only when branch is main
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Run container health check
+      # Poll for HEALTHY (max 10 tries)
+      # On failure, dump logs and exit non-zero
+      # Then clean up
+        run: |
+          CONTAINER_ID=$(docker run -d --name test-${{ github.run_id }} \
+            ${{ env.IMAGE_NAME }}:${{ github.sha }})
+          for i in $(seq 1 10); do
+            STATUS=$(docker inspect \
+              --format='{{.State.Health.Status}}' $CONTAINER_ID)
+            echo "Attempt $i: container health is '$STATUS'"
+            if [ "$STATUS" = "healthy" ]; then
+              echo "✅ Container is healthy"
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$STATUS" != "healthy" ]; then
+            echo "🚨 Container failed health check"
+            docker logs $CONTAINER_ID
+            docker rm -f $CONTAINER_ID
+            exit 1
+          fi
+          docker rm -f $CONTAINER_ID
