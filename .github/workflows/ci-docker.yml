@@ -6,17 +6,28 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  packages: write
+
 env:
-  IMAGE_NAME: christianhicks/mortgage-rate-monitor 
+  IMAGE_NAME: ghcr.io/hicks017/mortgage-rate-monitor
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Docker image
-      # Just build the image, do not push docker image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -26,7 +37,6 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Push Docker image (main only)
-      # Push docker image only when branch is main
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v4
         with:
@@ -38,9 +48,6 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Run container health check
-      # Poll for HEALTHY (max 10 tries)
-      # On failure, dump logs and exit non-zero
-      # Then clean up
         run: |
           CONTAINER_ID=$(docker run -d --name test-${{ github.run_id }} \
             ${{ env.IMAGE_NAME }}:${{ github.sha }})
