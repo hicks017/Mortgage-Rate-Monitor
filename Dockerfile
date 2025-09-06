@@ -5,9 +5,6 @@ FROM python:3.13.7-slim-trixie
 WORKDIR /app
 COPY . /app
 
-# Copy the necessary files
-COPY src/ ./src/
-
 # Install development dependencies
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
