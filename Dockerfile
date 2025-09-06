@@ -1,8 +1,9 @@
 # Development Dockerfile
 FROM python:3.13.7-slim-trixie
 
-# Set working directory
+# Set up working directory
 WORKDIR /app
+RUN mkdir -p data
 COPY . /app
 
 # Install development dependencies

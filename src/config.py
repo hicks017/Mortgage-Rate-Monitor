@@ -3,7 +3,7 @@ import os
 # Configuration ------------------------------------------------------------------------
 mortgage_url = "https://www.mortgagenewsdaily.com/mortgage-rates/mnd"
 ticker = "MBB"
-SQLITE_FILE = "app/data/data.sqlite3"
+SQLITE_FILE = "data/data.sqlite3"
 TABLE_NAME  = "rates_mbb"
 POSTGRES_VARS = {
     "host":     os.getenv("PG_HOST"),
